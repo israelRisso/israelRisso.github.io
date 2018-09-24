@@ -145,9 +145,7 @@ function initControls(data)
 }
 initMap();
 
-document.addEventListener("dragend", function(event) {
-    savePolygon();
-});
+document.addEventListener("dragend",   savePolygon);
 
 
 
