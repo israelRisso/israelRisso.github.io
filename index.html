@@ -98,7 +98,7 @@ function initMap() {
 function bindDataLayerListeners(dataLayer) {
     dataLayer.addListener('addfeature', savePolygon);
     dataLayer.addListener('removefeature', savePolygon);
-  dataLayer.addListener('dragend', savePolygon);
+  dataLayer.addListener('drop', savePolygon);
   dataLayer.addListener('dragfeature', savePolygon);
     //dataLayer.addListener('setgeometry', savePolygon);
 }
