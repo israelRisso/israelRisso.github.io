@@ -1,0 +1,158 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Drawing Tools</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <meta charset="utf-8">
+    <link rel="manifest" href="./manifest.json">  
+
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+
+<body>
+
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAJ3B51C2XxpsPj2tifmNSnNiGi9fGDmBQ&libraries=drawing,geometry"></script> 
+<div id="panel">
+        <div id="panel-content">
+            <div id="controls">
+                selecione: <select id="polyList"></select>
+                <button id="btnDelete">Delete</button>
+            </div>
+        </div>
+    </div>
+    <div id="map"></div>
+
+<script type="text/javascript">
+
+if ('serviceWorker' in navigator) {
+ navigator.serviceWorker.register('/sw.js')
+ .then(function () {console.log('service worker registered');})
+ .catch(function () {console.warn('service worker failed'); });
+ }
+  
+
+var map;
+
+     var latitude;
+      var long;
+      var local;
+function initMap() {
+    map = new google.maps.Map(document.getElementById('map'), {
+          center: {lat: -32.04, lng: -52.08},
+        zoom: 15,
+        // only show roadmap type of map, and disable ability to switch to other type
+        mapTypeId: google.maps.MapTypeId.ROADMAP,
+        mapTypeControl: false
+    });
+
+
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(function(position) {
+            latitude = position.coords.latitude + "";
+            long = position.coords.longitude + "";
+            local = latitude + ', ' + long;
+
+
+            var pos = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            };
+                     map.setCenter(pos);
+
+         });
+       }   
+        
+
+
+
+    map.data.setControls(['Polygon', 'Point', 'LineString']);
+    map.data.setStyle({
+        editable: true,
+        draggable: true
+    });
+    bindDataLayerListeners(map.data);
+
+   
+    loadPolygons(map);  //load saved data
+}
+
+
+// Apply listeners to refresh the GeoJson display on a given data layer.
+function bindDataLayerListeners(dataLayer) {
+    dataLayer.addListener('addfeature', savePolygon);
+    dataLayer.addListener('removefeature', savePolygon);
+    //dataLayer.addListener('setgeometry', savePolygon);
+}
+
+function loadPolygons(map) {
+    var data = JSON.parse(localStorage.getItem('geoData'));
+
+
+    map.data.forEach(function (f) {
+        map.data.remove(f);
+    });
+    map.data.addGeoJson(data)
+}
+
+
+
+function savePolygon() {
+    map.data.toGeoJson(function (json) {
+        localStorage.setItem('geoData', JSON.stringify(json));
+        initControls(json);
+    });
+}
+
+function initControls(data)
+{
+    var sel = document.getElementById('polyList');
+    sel.options.length = 0;
+
+    for (var i = 0; i < data.features.length; i++) {
+        var opt = document.createElement('option');
+        opt.innerHTML = data.features[i].geometry.type + i;
+        opt.value = i;
+        sel.appendChild(opt);
+    }
+
+    document.getElementById("btnDelete").disabled = (data.features.length === 0); 
+    document.getElementById("btnDelete").onclick = function(){
+        var selIdx = sel.options[sel.selectedIndex].value; //get poly index 
+        data.features.splice(parseInt(selIdx), 1);   
+
+        //reload 
+        localStorage.setItem('geoData', JSON.stringify(data));
+        initControls(data);  
+        loadPolygons(map);   
+    };
+}
+initMap();
+
+document.addEventListener("dragend", function(event) {
+    savePolygon();
+});
+
+
+
+</script>
+
+
+
+</body>    
